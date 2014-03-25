@@ -1,0 +1,48 @@
+.board {
+  padding: 0;
+  margin: 0;
+  border: 6px solid #000000;
+}
+
+.board td {
+  width: 6em;
+  height: 6em;
+  border-top: 1px solid #000000;
+  border-left: 1px solid #000000;
+  border-right: 1px solid #000000;
+  border-bottom: 1px solid #000000;
+  padding: 1px;
+  margin: 0;
+}
+.board td.rightAndBottom {
+  border-right: 6px solid #000000;
+  border-bottom: 6px solid #000000;
+} 
+.board td.right {
+  border-right: 6px solid #000000;
+} 
+.board td.bottom {
+  border-bottom: 6px solid #000000;
+} 
+.option{
+	padding: 15px;
+}
+.selectedValue{
+	font-size:40px;
+	text-align:center;
+}
+.cell {
+  color: #0000ff;
+}
+a:link {
+	font-size:25px;
+	color:#C0C0C0;
+	text-decoration:none;
+}
+a:visited {
+	font-size:25px;
+	color:#C0C0C0;
+	text-decoration:none;
+}
+
+

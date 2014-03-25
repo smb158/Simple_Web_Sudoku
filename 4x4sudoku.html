@@ -1,0 +1,452 @@
+<html>
+<head>
+<title>Javascript Sudoku</title>
+<link rel="stylesheet" type="text/css" href="./sudoku.css">
+<script type="text/javascript" src="./sudoku.js"></script>
+<script type="text/javascript">
+	var gameStateString = "";
+	var movecount = 0;
+	var gameStates = new Array();
+	var currentBoard = new Array(new Array(0, 0, 0, 0),
+                          new Array(0, 0, 0, 0),
+                          new Array(0, 0, 0, 0),
+                          new Array(0, 0, 0, 0));
+						  
+function start()
+{
+	if(initBoard != null)
+	{
+		currentBoard = initBoard;
+	}
+	//printBoard();
+	drawGrid();
+}
+
+function clearBoard()
+{
+	var gameBoard = document.getElementById("gameBoard");
+	var theRows = gameBoard.getElementsByTagName("tr");
+	for(var x = 0; x < 4; x++)
+	{
+		//console.log("we are checking row = "+x);
+		var myRow = theRows[x];
+		var rowBoxes = myRow.getElementsByTagName("td");
+		for(var y = 0; y < 4; y++)
+		{
+			//console.log("we are checking column = "+y);
+			var myBox = rowBoxes[y];
+			var myBoxOptions = myBox.getElementsByTagName("a");
+			if(myBoxOptions.length > 1)
+			{
+				for(var z = 0; z < 4; z++){
+					//console.log("row = "+x+" col = "+y+" link = "+(z+1));
+					myBoxOptions[z].style.visibility="visible";
+				}
+			}
+			//else it has already been set to a value, restore links
+			else
+			{
+				var insertString = "<a href=\"#\" class=\"option\"  id=\"link"+x+y+"-1\" onclick=\"setBlock("+x+","+y+",1)\">1</a><a href=\"#\" class=\"option\"  id=\"link"+x+y+"-2\" onclick=\"setBlock("+x+","+y+",2)\">2</a><br><br><a href=\"#\" class=\"option\"  id=\"link"+x+y+"-3\" onclick=\"setBlock("+x+","+y+",3)\">3</a><a href=\"#\" class=\"option\"  id=\"link"+x+y+"-4\" onclick=\"setBlock("+x+","+y+",4)\">4</a>"
+				console.log("Changing "+myBox.innerHTML+" to "+insertString);
+				myBox.innerHTML=insertString;
+			}
+		}
+	}
+}
+
+function printBoard()
+{
+	for(var x = 0; x < 4; x++)
+	{
+		for(var y = 0; y < 4; y++)
+		{
+			console.log(currentBoard[x][y]);
+		}
+	}
+}
+function solveConflicts(row, column, value){
+	var gameBoard = document.getElementById("gameBoard");
+	var theRows = gameBoard.getElementsByTagName("tr");
+	var myRow = theRows[row];
+	var rowBoxes = "";
+	var myBox = "";
+	var myBoxOptions = "";
+	
+	//check row
+	for(var x = 0; x < 4; x++)
+	{
+		if(currentBoard[row][x] == 0)
+		{
+			//there is already a box in this row with the requested value
+			//need to hide this spot
+			rowBoxes = myRow.getElementsByTagName("td");
+			myBox = rowBoxes[x];
+			myBoxOptions = myBox.getElementsByTagName("a");
+			for(var k = 0; k < 4; k++)
+			{
+				var stringToFind = "link"+row+x+"-"+value;
+				//document.write(temp2[k].id);
+				//document.write(temp2[k].innerHTML);
+				//document.write(stringToFind);
+				//document.write("<br>");
+				if(myBoxOptions[k] != null && myBoxOptions[k].id == stringToFind)
+				{
+					//hide it
+					myBoxOptions[k].style.visibility="hidden";
+				}
+			}
+		}
+	}
+
+	//check column
+	for(var y = 0; y < 4; y++)
+	{
+		if(currentBoard[y][column] == 0)
+		{
+			//console.log("Checking "+y+" "+column+"\n");
+			myRow = theRows[y];
+			rowBoxes = myRow.getElementsByTagName("td");
+			myBox = rowBoxes[column];
+			myBoxOptions = myBox.getElementsByTagName("a");
+			for(var k = 0; k < 4; k++){
+				var stringToFind2 = "link"+y+column+"-"+value;
+				//console.log("Trying to find "+stringToFind2+"\n");
+				if(myBoxOptions[k] != null && myBoxOptions[k].id == stringToFind2)
+				{
+					//console.log("Found it");
+					//hide it
+					myBoxOptions[k].style.visibility="hidden";
+				}
+			}
+		}
+	}
+	
+	//check box
+	var temprow = 0;
+	var tempcol = 0;
+	if(row == 1 || row == 3)
+	{
+		if(column == 2 || column == 0)
+		{
+			//set top right corner
+			temprow = (row-1);
+			tempcol = (column+1);
+		}
+		else if(column == 1 || column == 3)
+		{
+			//set top left
+			temprow = (row-1);
+			tempcol = (column-1);
+		}
+	}
+	else if(row == 0 || row == 2)
+	{
+		if(column == 0 || column == 2)
+		{
+			//set bottom right
+			temprow = (row+1);
+			tempcol = (column+1);
+		}
+		else if(column == 1 || column == 3)
+		{
+			//set bottom left
+			temprow = (row+1);
+			tempcol = (column-1);
+		}
+	}
+	
+	myRow = theRows[temprow];
+	rowBoxes = myRow.getElementsByTagName("td");
+	myBox = rowBoxes[tempcol];
+	myBoxOptions = myBox.getElementsByTagName("a");
+	for(var k = 0; k < 4; k++){
+		var stringToFind = "link"+temprow+tempcol+"-"+value;
+		if(myBoxOptions[k] != null && myBoxOptions[k].id == stringToFind)
+		{
+			//console.log("Found it");
+			//hide it
+			myBoxOptions[k].style.visibility="hidden";
+		}
+	}
+
+}
+function setBlock(row, column, value){
+	addCurrentState();
+	//set the requested block to the value
+	currentBoard[row][column] = value;
+	//increase move counter
+	movecount++;
+	//change the output
+	drawGrid();
+	//check if player won
+	var winner = true;
+	for(var n = 0; n < 4; n++){
+	
+		for(var m = 0; m < 4; m++)
+		{
+			if(currentBoard[n][m] == 0)
+			{
+				winner = false;
+			}
+		}
+	}
+	if(winner == true)
+	{
+		alert("You win the game!");
+		var temp = movecount;
+		for(var p = 0; p < temp; p++){
+			undo();
+		}
+	}
+}
+function addCurrentState(){
+	//convert the current state into a string deliminated by commas
+	var currStateString =currentBoard[0][0].toString()+currentBoard[0][1].toString()+currentBoard[0][2].toString()+currentBoard[0][3].toString()+currentBoard[1][0].toString()+currentBoard[1][1].toString()+currentBoard[1][2].toString()+currentBoard[1][3].toString()+currentBoard[2][0].toString()+currentBoard[2][1].toString()+currentBoard[2][2].toString()+currentBoard[2][3].toString()+currentBoard[3][0].toString()+currentBoard[3][1].toString()+currentBoard[3][2].toString()+currentBoard[3][3].toString();
+	//add it to the end of the current gameState string
+	gameStates.push(currStateString);
+}
+function drawGrid(){
+	
+	var theMoveCount = document.getElementById("movecount");
+	theMoveCount.innerHTML = "Moves:"+movecount;
+	
+	var a = document.getElementById("gameBoard");
+	var b = a.getElementsByTagName("tr");
+	//iterate through the currentState and update the boxes on the page
+	for(var i = 0; i < 4; i++)
+	{
+		var c = b[i].getElementsByTagName("td");
+		for(var l = 0; l < 4; l++)
+		{
+			currValue = c[l];
+			if(currValue != null){
+				console.log("drawing row="+i+" col="+l);
+				//if zero make the value all of the option hyperlinks
+				if(currentBoard[i][l] == 0)
+				{
+					console.log("current spot should be 0, leaving it alone");
+					//do nothing
+				}
+				//if not zero just but the value in the box
+				else
+				{
+					solveConflicts(i,l,currentBoard[i][l]);
+					currValue.innerHTML = "<p class=\"selectedValue\">"+currentBoard[i][l]+"</p>";
+				}
+			}
+			else{
+			}
+		}
+	}
+}
+function undo()
+{
+	//this function will restore the board to its previous state
+	//grab the most recent board setup
+	if(gameStates.length < 1){
+		return;
+	}
+	
+	movecount--;
+	
+	var gameStateString = gameStates.pop();
+	
+	console.log("Gamestate we are restoring to = "+gameStateString);
+	
+	for(var x = 0; x < 16; x++)
+	{
+		var readInValue = parseInt(gameStateString.charAt(x));
+		var temp = 0;
+		if(readInValue == 0){
+			temp = 0;
+		}
+		else if(readInValue == 1){
+			temp = 1;
+		}
+		else if(readInValue == 2){
+			temp = 2;
+		}
+		else if(readInValue == 3){
+			temp = 3;
+		}
+		else if(readInValue == 4){
+			temp = 4;
+		}
+		
+		if(x < 4)
+		{
+			currentBoard[0][x] = temp;
+		}
+		if(x >= 4)
+		{
+			if(x < 8)
+			{
+				currentBoard[1][(x-4)] = temp;
+			}
+		}
+		if(x >= 8)
+		{
+			if(x < 12)
+			{
+				currentBoard[2][(x-8)] = temp;
+			}
+		}
+		if(x >= 12)
+		{
+			if(x < 16)
+			{
+				currentBoard[3][(x-12)] = temp;
+			}
+		}
+	}
+	
+	
+	//printBoard();
+	
+	//call drawgrid to update the board
+	clearBoard();
+	drawGrid();
+}
+</script>
+</head>
+
+<body onload="start()">
+<h1>Lets play Sudoku!</h1>
+<p id="movecount">Moves:0</p>
+<br />
+<button type="button" onclick="undo()">Undo!</button>
+<br />
+<br />
+
+<table id="gameBoard" class="board" cellspacing="0" cellpadding="0">
+<tr>
+	<td id="box00" class="">
+		<a href="#" class="option"  id="link00-1" onclick="setBlock(0,0,1)">1</a>
+		<a href="#" class="option"  id="link00-2" onclick="setBlock(0,0,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link00-3" onclick="setBlock(0,0,3)">3</a>
+		<a href="#" class="option"  id="link00-4" onclick="setBlock(0,0,4)">4</a>
+	</td>
+	<td id="box01" class="right">
+		<a href="#" class="option"  id="link01-1" onclick="setBlock(0,1,1)">1</a>
+		<a href="#" class="option"  id="link01-2" onclick="setBlock(0,1,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link01-3" onclick="setBlock(0,1,3)">3</a>
+		<a href="#" class="option"  id="link01-4" onclick="setBlock(0,1,4)">4</a>
+	</td>
+	<td id="box02" class="">
+		<a href="#" class="option"  id="link02-1" onclick="setBlock(0,2,1)">1</a>
+		<a href="#" class="option"  id="link02-2" onclick="setBlock(0,2,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link02-3" onclick="setBlock(0,2,3)">3</a>
+		<a href="#" class="option"  id="link02-4" onclick="setBlock(0,2,4)">4</a>
+	</td>
+	<td id="box03" class="">
+		<a href="#" class="option"  id="link03-1" onclick="setBlock(0,3,1)">1</a>
+		<a href="#" class="option"  id="link03-2" onclick="setBlock(0,3,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link03-3" onclick="setBlock(0,3,3)">3</a>
+		<a href="#" class="option"  id="link03-4" onclick="setBlock(0,3,4)">4</a>
+	</td>
+</tr>
+<tr>
+	<td id="box10" class="bottom">
+		<a href="#" class="option"  id="link10-1" onclick="setBlock(1,0,1)">1</a>
+		<a href="#" class="option"  id="link10-2" onclick="setBlock(1,0,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link10-3" onclick="setBlock(1,0,3)">3</a>
+		<a href="#" class="option"  id="link10-4" onclick="setBlock(1,0,4)">4</a>
+	</td>
+	<td id="box11" class="rightAndBottom">
+		<a href="#" class="option"  id="link11-1" onclick="setBlock(1,1,1)">1</a>
+		<a href="#" class="option"  id="link11-2" onclick="setBlock(1,1,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link11-3" onclick="setBlock(1,1,3)">3</a>
+		<a href="#" class="option"  id="link11-4" onclick="setBlock(1,1,4)">4</a>
+	</td>
+	<td id="box12" class="bottom">
+		<a href="#" class="option"  id="link12-1" onclick="setBlock(1,2,1)">1</a>
+		<a href="#" class="option"  id="link12-2" onclick="setBlock(1,2,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link12-3" onclick="setBlock(1,2,3)">3</a>
+		<a href="#" class="option"  id="link12-4" onclick="setBlock(1,2,4)">4</a>
+	</td>
+	<td id="box13" class="bottom">
+		<a href="#" class="option"  id="link13-1" onclick="setBlock(1,3,1)">1</a>
+		<a href="#" class="option"  id="link13-2" onclick="setBlock(1,3,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link13-3" onclick="setBlock(1,3,3)">3</a>
+		<a href="#" class="option"  id="link13-4" onclick="setBlock(1,3,4)">4</a>
+	</td>
+</tr>
+<tr>
+	<td id="box20" class="">
+		<a href="#" class="option"  id="link20-1" onclick="setBlock(2,0,1)">1</a>
+		<a href="#" class="option"  id="link20-2" onclick="setBlock(2,0,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link20-3" onclick="setBlock(2,0,3)">3</a>
+		<a href="#" class="option"  id="link20-4" onclick="setBlock(2,0,4)">4</a>
+	</td>
+	<td id="box21" class="right">
+		<a href="#" class="option"  id="link21-1" onclick="setBlock(2,1,1)">1</a>
+		<a href="#" class="option"  id="link21-2" onclick="setBlock(2,1,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link21-3" onclick="setBlock(2,1,3)">3</a>
+		<a href="#" class="option"  id="link21-4" onclick="setBlock(2,1,4)">4</a>
+	</td>
+	<td id="box22" class="">
+		<a href="#" class="option"  id="link22-1" onclick="setBlock(2,2,1)">1</a>
+		<a href="#" class="option"  id="link22-2" onclick="setBlock(2,2,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link22-3" onclick="setBlock(2,2,3)">3</a>
+		<a href="#" class="option"  id="link22-4" onclick="setBlock(2,2,4)">4</a>
+	</td>
+	<td id="box23" class="">
+		<a href="#" class="option"  id="link23-1" onclick="setBlock(2,3,1)">1</a>
+		<a href="#" class="option"  id="link23-2" onclick="setBlock(2,3,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link23-3" onclick="setBlock(2,3,3)">3</a>
+		<a href="#" class="option"  id="link23-4" onclick="setBlock(2,3,4)">4</a>
+	</td>
+</tr>
+<tr>
+	<td id="box30" class="">
+		<a href="#" class="option"  id="link30-1" onclick="setBlock(3,0,1)">1</a>
+		<a href="#" class="option"  id="link30-2" onclick="setBlock(3,0,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link30-3" onclick="setBlock(3,0,3)">3</a>
+		<a href="#" class="option"  id="link30-4" onclick="setBlock(3,0,4)">4</a>
+	</td>
+	<td id="box31" class="right">
+		<a href="#" class="option"  id="link31-1" onclick="setBlock(3,1,1)">1</a>
+		<a href="#" class="option"  id="link31-2" onclick="setBlock(3,1,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link31-3" onclick="setBlock(3,1,3)">3</a>
+		<a href="#" class="option"  id="link31-4" onclick="setBlock(3,1,4)">4</a>
+	</td>
+	<td id="box32" class="">
+		<a href="#" class="option"  id="link32-1" onclick="setBlock(3,2,1)">1</a>
+		<a href="#" class="option"  id="link32-2" onclick="setBlock(3,2,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link32-3" onclick="setBlock(3,2,3)">3</a>
+		<a href="#" class="option"  id="link32-4" onclick="setBlock(3,2,4)">4</a>
+	</td>
+	<td id="box33" class="">
+		<a href="#" class="option"  id="link33-1" onclick="setBlock(3,3,1)">1</a>
+		<a href="#" class="option"  id="link33-2" onclick="setBlock(3,3,2)">2</a>
+		<br><br>
+		<a href="#" class="option"  id="link33-3" onclick="setBlock(3,3,3)">3</a>
+		<a href="#" class="option"  id="link33-4" onclick="setBlock(3,3,4)">4</a>
+	</td>
+</tr>
+</table>
+	
+
+<script type="text/javascript">
+
+</script>
+
+
+
+</body>
+</html>
